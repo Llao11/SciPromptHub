@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Prompt List</title>
+        <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+        }
+  a {
+    color: #007bff;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+    color: #0056b3;
+  }
+
+  a:visited {
+    color: #007bff;
+  }
+        .container {
+            max-width: 700px;
+            margin: 60px auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        .top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            flex-grow: 1;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;              /* takes remaining space */
+            max-width: 400px;     /* control maximum width */
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        .search-btn, .add-btn{
+            padding: 8px 16px;
+            font-size: 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .search-btn:hover, .add-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .clear-tag {
+            margin-left: 10px;
+            font-size: 0.9em;
+            color: #ff4d4d;
+            text-decoration: none;
+        }
+        .search-area {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .search-area input {
+            width: 80%;
+            padding: 8px;
+        }
+        ul {
+            padding-left: 0;
+        }
+        li {
+            list-style: none;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .tag {
+            display: inline-block;
+            margin-right: 6px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .clear-tag {
+            display: block;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #ff5e5e;
+            font-size: 0.9em;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-left: auto;
+        }
+  .clear-tag-container {
+    margin-top: 8px;
+  }
+
+  .clear-tag {
+    font-size: 0.9em;
+    color: #ff4d4d;
+    text-decoration: none;
+  }
+
+  .clear-tag:hover {
+    text-decoration: underline;
+  }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Prompt List</h1>
+
+            <div class="top-bar">
+                <form method="get" action="{% url 'list_prompts' %}" class="search-form">
+                    <input
+                        type="text"
+                        name="q"
+                        placeholder="Search prompts"
+                        value="{{ search_query|default:'' }}"
+                        class="search-input"
+                    >
+{% if tag_filter %}
+  <div class="clear-tag-container">
+    <a href="{% url 'list_prompts' %}" class="clear-tag">Clear tag filter '{{ tag_filter }}'</a>
+  </div>
+{% endif %}
+                    <button type="submit" class="search-btn">Search</button>
+
+                </form>
+
+                <a href="{% url 'add_prompt' %}">
+                    <button type="button" class="add-btn">Add New Prompt</button>
+                </a>
+                <!-- <br> -->
+                <!-- {% if tag_filter %} -->
+                <!-- <a href="{% url 'list_prompts' %}" class="clear-tag">Clear tag filter '{{ tag_filter }}'</a> -->
+                <!-- {% endif %} -->
+            </div>
+            <ul>
+                {% for prompt in prompts %}
+                <li>
+
+                    <a href="{% url 'prompt_detail' prompt.id %}">
+                        <strong>{{ prompt.name|truncatechars:80 }}</strong>
+                    </a><br>
+                    <!-- <strong>{{ prompt.text }}</strong><br> -->
+                    {% if prompt.description %}
+                    <em>{{ prompt.description | truncatechars:200 }}</em><br>
+                    {% elif prompt.text %}
+                    <em>{{ prompt.text }}</em><br>
+                    {% endif %}
+                    {% if prompt.tags.all %}
+                    Tags:
+                    {% for tag in prompt.tags.all %}
+                    <a href="?tag={{ tag.name }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ tag.name }}</a>
+                    {% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                    {% endif %}
+
+                    <!-- <!-- DELETE BUTTON --> 
+                    <!-- <form method="post" action="{% url 'delete_prompt' prompt.id %}"> -->
+                    <!--     {% csrf_token %} -->
+                    <!--     <button type="submit" class="delete-btn">Remove</button> -->
+                    <!-- </form> -->
+                </li>
+                {% empty %}
+                <li>No prompts found.</li>
+                {% endfor %}
+            </ul>
+
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if tag_filter %}&tag={{ tag_filter }}{% endif %}">← Previous</a>
+            {% endif %}
+
+            <span> Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} </span>
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if tag_filter %}&tag={{ tag_filter }}{% endif %}">Next →</a>
+            {% endif %}
+        </div>
+        </div>
+
+        <!-- All tags -->
+        <h3 style="text-align: center;">All Tags</h3>
+        <div style="text-align: center; margin-top: 10px;">
+            {% for tag in all_tags %}
+            <a href="?tag={{ tag.name }}{% if search_query %}&q={{ search_query }}{% endif %}" style="margin: 4px; text-decoration: none; color: #007bff;">
+                {{ tag.name }}
+            </a>
+            {% empty %}
+            <p>No tags found.</p>
+            {% endfor %}
+        </div>
+
+
+    </body>
+</html>
+
